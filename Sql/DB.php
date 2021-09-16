@@ -1,6 +1,7 @@
 <?php
 
 require "db_config.php";
+require 'Util/Helper.php';
 
 /**
  * Class DB
@@ -64,7 +65,26 @@ class DB
         if(self::$dbcon == false){
             return self::$dbcon = new self;
         }
+        return self::$dbcon;
     }
+
+
+    // 建表语句筛选
+    public function switchCreateSql($type , $msg){
+        switch ($type){
+            case is_int($type):
+
+                return 'str';
+                break;
+            case is_string($type):
+                if (isDataTime($msg)){
+
+                }
+
+                break;
+        }
+    }
+
 
     //执行sql语句的方法
     public function query($sql){
