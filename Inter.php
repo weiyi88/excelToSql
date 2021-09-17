@@ -7,9 +7,12 @@ require "./PHPExcel-1.8/Classes/PHPExcel.php";
 const dir = "./ExcelFile";
 $file_dir = new FileStrem();
 
+$db = DB::getIntance();
+
 
 //读取文件流 获取文件绝对路径
 $file_dir->ReadDir(dir,function ($file_paht){
+    $t = strtotime(date("Y-m-d H:i:s")) ;        //防重表名
     // 闭包 函数处理
     $path_parts = pathinfo($file_paht);
     $tableName = $path_parts['filename'];   //获取表名
@@ -25,16 +28,17 @@ $file_dir->ReadDir(dir,function ($file_paht){
         for ($i = 0 ; $i<$sheetCount; $i++){
             $data = $objPHPExcel->getSheet($i)->toArray();
             //读取每个 sheet 数据，放入数组
-           $title =$data[0];
+           $title =$data[0];        //字段名
            unset($data[0]);
 
 
+            $db->endCreateTable();
            //建表
+            if ($db->tableExist($tableName))$tableName.="_".(string)$t;
             $db=$db->createTable($tableName);
            foreach ($title as $k => $v){
                    $db->switchCreateSql($data[1][$k],$v,'',$v);
            }
-           $db->endCreateTable();
 
            //导入数据
             foreach ($data as $k =>$v){
@@ -47,7 +51,6 @@ $file_dir->ReadDir(dir,function ($file_paht){
             }
             $db->commit();
         }
-
     }catch (\ErrorException $e){
         echo   $e->getMessage();
         exit;

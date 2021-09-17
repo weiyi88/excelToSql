@@ -179,8 +179,13 @@ class DB
     }
 
 
-
-
+    //判断表是否存在
+    public function tableExist($table){
+        $sqlStr= "SHOW TABLES LIKE"."'$table'";
+        $row = $this->query($sqlStr)->fetch_all();
+        if (count($row) == 1)return true;
+        return false;
+    }
 
 
 
