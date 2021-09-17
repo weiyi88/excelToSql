@@ -109,6 +109,14 @@ class DB
                     return $this;
                 }
 
+                // text 格式
+                if (strlen($msg)>255){
+                    $this->str_sql .=" `$msg` text NOT NULL";
+                    if (!empty($comment))$this->str_sql .=" COMMENT '$comment'";
+                    $this->str_sql .=",";
+                    return $this;
+                }
+
                 //字符串格式
                 if (empty($len))$len=255;
                 $this->str_sql .= "`$msg` varchar($len) NOT NULL ";
