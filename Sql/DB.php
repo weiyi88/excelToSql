@@ -1,6 +1,5 @@
 <?php
 
-require "db_config.php";
 require __DIR__."./../Util/helper.php";
 
 /**
