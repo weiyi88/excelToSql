@@ -1,7 +1,7 @@
 <?php
 
 require "db_config.php";
-require 'Util/Helper.php';
+require __DIR__."./../Util/helper.php";
 
 /**
  * Class DB
@@ -10,9 +10,24 @@ require 'Util/Helper.php';
 class DB
 {
     private static $dbcon = false;
+    private $php_config = [
+        'host'=>'159.75.116.137',
+        'port'=> 3306,
+        'username'=>'forFileTest',
+        'password'=> 'forFileTest',
+        'database'=> 'forfiletest',
+        'charset'=>'utf8',
+    ];
 
-    private $config=[];
 
+    // 语句拼接
+    private $str_sql = '';
+    const STRING = 0;
+    const INT = 1;
+    const DATATIME =2;
+
+
+    // 链接
     private $host;
     private $port;
     private $user;
@@ -20,16 +35,18 @@ class DB
     private $db;
     private $charset;
     private $link;
-    // 私有方法构造
 
-    private function __construct($phpExcel)
+
+    // 私有方法构造
+    private function __construct()
     {
-        $this->host= $phpExcel['host'];
-        $this->port= $phpExcel['port'];
-        $this->user= $phpExcel['username'];
-        $this->pass= $phpExcel['password'];
-        $this->db  = $phpExcel['database'];
-        $this->charset= $phpExcel['charset'];
+
+        $this->host= $this->php_config['host'];
+        $this->port= $this->php_config['port'];
+        $this->user= $this->php_config['username'];
+        $this->pass= $this->php_config['password'];
+        $this->db  = $this->php_config['database'];
+        $this->charset= $this->php_config['charset'];
 
         $this->db_connect();        //链接数据库
         $this->db_userdb();         // 选择数据库
@@ -69,21 +86,94 @@ class DB
     }
 
 
+
+    public function createTable($tableName,$fx=''){
+        if (!empty($fx))$tableName = $fx.$tableName;
+        $this->str_sql = "CREATE TABLE ${tableName} (
+        `id` int(11) NOT NULL AUTO_INCREMENT,
+    ";
+        return $this;
+    }
+
     // 建表语句筛选
-    public function switchCreateSql($type , $msg){
-        switch ($type){
-            case is_int($type):
+    public function switchCreateSql($type,$msg,$len =0,$comment = ''){
+        switch (gettype($type)){
 
-                return 'str';
-                break;
-            case is_string($type):
-                if (isDataTime($msg)){
-
+            case 'string':
+                string :
+                //时间格式
+                if (helper::isDataTime($type)){
+                    $this->str_sql .=" `$msg` datetime NOT NULL";
+                    if (!empty($comment))$this->str_sql .=" COMMENT '$comment'";
+                    $this->str_sql .=",";
+                    return $this;
                 }
 
-                break;
+                //字符串格式
+                if (empty($len))$len=255;
+                $this->str_sql .= "`$msg` varchar($len) NOT NULL ";
+                if (!empty($comment))$this->str_sql .="COMMENT '$comment'";
+                $this->str_sql .= ",";
+                return $this;
+
+            case 'int' || 'double':
+                if (empty($len))$len = 11;
+                $this->str_sql .=" `$msg` int($len) NOT NULL ";
+                if (!empty($comment))$this->str_sql .="COMMENT '$comment'";
+                $this->str_sql .=",";
+                return $this;
+
+                default:
+                    //其他统统当字符串处理
+                    goto string;
         }
     }
+
+
+    //结束创表
+    public function endCreateTable(){
+        $this->str_sql .="PRIMARY KEY (`id`)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8;";
+
+        if (mysqli_query($this->link,$this->str_sql)){
+           // echo "创建成功表成功。".$this->str_sql;
+            return true;
+        }
+        echo "建表失败，错误：".mysqli_error($this->link);
+        print_r("\n");
+        print_r($this->str_sql) ;
+        return true;
+    }
+
+
+    //事务开启
+    public function beTransaction(){
+        mysqli_autocommit($this->link,false);
+        return $this;
+    }
+
+    //commit
+    public function commit(){
+        mysqli_commit($this->link);
+        return $this;
+    }
+
+    // 上条sql影响行数
+    public function affected_rows(){
+        return mysqli_affected_rows($this->link);
+    }
+
+
+    //事务回退
+    public function rollback(){
+        mysqli_rollback($this->link);
+        return $this;
+    }
+
+
+
+
+
 
 
     //执行sql语句的方法
